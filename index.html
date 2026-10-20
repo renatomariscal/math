@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Multiplication Game</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --border: #334155;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --accent: #6366f1;
+    --accent-glow: #818cf8;
+    --green: #22c55e;
+    --red: #ef4444;
+    --yellow: #eab308;
+  }
+
+  body {
+    font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 540px;
+    padding: 2rem;
+  }
+
+  h1 {
+    font-size: 1.6rem;
+    text-align: center;
+    margin-bottom: 2rem;
+    color: var(--accent-glow);
+    letter-spacing: 0.05em;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+  }
+
+  label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.4rem;
+  }
+
+  input[type="number"], input[type="text"] {
+    width: 100%;
+    padding: 0.6rem 0.8rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  input:focus { border-color: var(--accent); }
+
+  .row {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .row > div { flex: 1; }
+
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 0.8rem;
+    border: none;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.15s;
+  }
+
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent-glow); }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--muted); margin-top: 0.8rem; }
+  .btn-outline:hover { border-color: var(--muted); color: var(--text); }
+
+  /* Game screen */
+  .timer-bar {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+  }
+
+  .timer-fill {
+    height: 100%;
+    background: var(--accent);
+    transition: width 1s linear, background-color 0.3s;
+    width: 100%;
+  }
+
+  .timer-fill.warn { background: var(--yellow); }
+  .timer-fill.danger { background: var(--red); }
+
+  .timer-text {
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 1.5rem;
+  }
+
+  .problem {
+    text-align: center;
+    font-size: 3rem;
+    font-weight: 700;
+    padding: 1rem 0;
+    letter-spacing: 0.05em;
+  }
+
+  .problem .op { color: var(--muted); margin: 0 0.3rem; }
+
+  #answer {
+    text-align: center;
+    font-size: 2rem;
+    font-weight: 700;
+    padding: 0.8rem;
+    margin-top: 1rem;
+    letter-spacing: 0.1em;
+  }
+
+  .feedback {
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 600;
+    min-height: 2rem;
+    line-height: 2rem;
+    margin-top: 0.5rem;
+    transition: opacity 0.2s;
+  }
+
+  .feedback.correct { color: var(--green); }
+  .feedback.wrong { color: var(--red); }
+
+  .stats-row {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .stat { text-align: center; }
+  .stat-value { font-size: 1.4rem; font-weight: 700; }
+  .stat-value.green { color: var(--green); }
+  .stat-value.red { color: var(--red); }
+  .stat-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.2rem; }
+
+  /* Results */
+  .result-big {
+    text-align: center;
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--accent-glow);
+    margin-bottom: 0.5rem;
+  }
+
+  .result-sub {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .results-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .result-card {
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+  }
+
+  .result-card .stat-value { font-size: 1.6rem; }
+
+  .hidden { display: none !important; }
+
+  .shake {
+    animation: shake 0.3s ease-in-out;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+
+  .pop {
+    animation: pop 0.25s ease-out;
+  }
+
+  @keyframes pop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+    100% { transform: scale(1); }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- SETUP SCREEN -->
+  <div id="setup">
+    <h1>× MULTIPLY</h1>
+    <div class="card">
+      <div class="row">
+        <div>
+          <label>Fixed number</label>
+          <input type="number" id="fixedNum" value="4" min="0" max="99">
+        </div>
+        <div>
+          <label>Timer (min)</label>
+          <input type="number" id="timerMin" value="5" min="1" max="30">
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Range min</label>
+          <input type="number" id="rangeMin" value="0" min="0" max="99">
+        </div>
+        <div>
+          <label>Range max</label>
+          <input type="number" id="rangeMax" value="10" min="0" max="99">
+        </div>
+      </div>
+      <button class="btn btn-primary" id="startBtn">Start Game</button>
+    </div>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div id="game" class="hidden">
+    <div class="timer-bar"><div class="timer-fill" id="timerFill"></div></div>
+    <div class="timer-text" id="timerText">5:00</div>
+    <div class="card">
+      <div class="problem" id="problem">
+        <span id="numA">4</span>
+        <span class="op">×</span>
+        <span id="numB">7</span>
+        <span class="op">=</span>
+      </div>
+      <input type="text" id="answer" inputmode="numeric" autocomplete="off" placeholder="?">
+      <div class="feedback" id="feedback">&nbsp;</div>
+      <div class="stats-row">
+        <div class="stat">
+          <div class="stat-value green" id="correctCount">0</div>
+          <div class="stat-label">Correct</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value red" id="wrongCount">0</div>
+          <div class="stat-label">Wrong</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="perMin">0.0</div>
+          <div class="stat-label">Per min</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="accuracy">—</div>
+          <div class="stat-label">Accuracy</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS SCREEN -->
+  <div id="results" class="hidden">
+    <h1>× MULTIPLY</h1>
+    <div class="card">
+      <div class="result-big" id="finalScore">0</div>
+      <div class="result-sub">problems solved correctly</div>
+      <div class="results-grid">
+        <div class="result-card">
+          <div class="stat-value" id="finalTotal">0</div>
+          <div class="stat-label">Total</div>
+        </div>
+        <div class="result-card">
+          <div class="stat-value" id="finalAccuracy">0%</div>
+          <div class="stat-label">Accuracy</div>
+        </div>
+        <div class="result-card">
+          <div class="stat-value" id="finalPerMin">0.0</div>
+          <div class="stat-label">Per minute</div>
+        </div>
+        <div class="result-card">
+          <div class="stat-value red" id="finalWrong">0</div>
+          <div class="stat-label">Wrong</div>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="restartBtn">Play Again</button>
+      <button class="btn btn-outline" id="reconfigBtn">Change Settings</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+let fixedNum, rangeMin, rangeMax, timerDuration;
+let correct, wrong, startTime, timerInterval, currentAnswer;
+let gameActive = false;
+
+function show(id) {
+  ['setup', 'game', 'results'].forEach(s => $(s).classList.toggle('hidden', s !== id));
+}
+
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function nextProblem() {
+  const b = randInt(rangeMin, rangeMax);
+  $('numA').textContent = fixedNum;
+  $('numB').textContent = b;
+  currentAnswer = fixedNum * b;
+  $('answer').value = '';
+  $('feedback').innerHTML = '&nbsp;';
+  $('answer').focus();
+}
+
+function updateStats() {
+  const total = correct + wrong;
+  const elapsed = (Date.now() - startTime) / 60000;
+  $('correctCount').textContent = correct;
+  $('wrongCount').textContent = wrong;
+  $('perMin').textContent = elapsed > 0 ? (total / elapsed).toFixed(1) : '0.0';
+  $('accuracy').textContent = total > 0 ? Math.round((correct / total) * 100) + '%' : '—';
+}
+
+function updateTimer() {
+  const elapsed = Date.now() - startTime;
+  const remaining = Math.max(0, timerDuration - elapsed);
+  const pct = (remaining / timerDuration) * 100;
+  const mins = Math.floor(remaining / 60000);
+  const secs = Math.floor((remaining % 60000) / 1000);
+
+  $('timerFill').style.width = pct + '%';
+  $('timerText').textContent = mins + ':' + String(secs).padStart(2, '0');
+
+  const fill = $('timerFill');
+  fill.classList.toggle('warn', pct < 30 && pct >= 10);
+  fill.classList.toggle('danger', pct < 10);
+
+  if (remaining <= 0) endGame();
+}
+
+function startGame() {
+  fixedNum = parseInt($('fixedNum').value) || 4;
+  rangeMin = parseInt($('rangeMin').value) || 0;
+  rangeMax = parseInt($('rangeMax').value) || 10;
+  timerDuration = (parseInt($('timerMin').value) || 5) * 60000;
+
+  if (rangeMin > rangeMax) [rangeMin, rangeMax] = [rangeMax, rangeMin];
+
+  correct = 0;
+  wrong = 0;
+  gameActive = true;
+  startTime = Date.now();
+
+  show('game');
+  nextProblem();
+  updateStats();
+  timerInterval = setInterval(updateTimer, 250);
+}
+
+function endGame() {
+  gameActive = false;
+  clearInterval(timerInterval);
+
+  const total = correct + wrong;
+  const elapsed = (Date.now() - startTime) / 60000;
+
+  $('finalScore').textContent = correct;
+  $('finalTotal').textContent = total;
+  $('finalAccuracy').textContent = total > 0 ? Math.round((correct / total) * 100) + '%' : '—';
+  $('finalPerMin').textContent = elapsed > 0 ? (total / elapsed).toFixed(1) : '0.0';
+  $('finalWrong').textContent = wrong;
+
+  show('results');
+}
+
+function checkAnswer() {
+  const val = $('answer').value.trim();
+  if (val === '') return;
+
+  const num = parseInt(val);
+  if (isNaN(num)) return;
+
+  const isCorrect = num === currentAnswer;
+
+  if (isCorrect) {
+    correct++;
+    $('feedback').textContent = '✓ Correct';
+    $('feedback').className = 'feedback correct';
+    $('problem').classList.add('pop');
+    setTimeout(() => $('problem').classList.remove('pop'), 250);
+  } else {
+    wrong++;
+    $('feedback').textContent = '✗ ' + $('numA').textContent + ' × ' + $('numB').textContent + ' = ' + currentAnswer;
+    $('feedback').className = 'feedback wrong';
+    $('answer').classList.add('shake');
+    setTimeout(() => $('answer').classList.remove('shake'), 300);
+  }
+
+  updateStats();
+  setTimeout(nextProblem, isCorrect ? 300 : 900);
+}
+
+$('answer').addEventListener('input', function() {
+  if (!gameActive) return;
+  const val = this.value.trim();
+  if (val === '' || val === '-') return;
+
+  const expectedLen = String(currentAnswer).length;
+  const absVal = val.replace('-', '');
+
+  if (currentAnswer < 0) {
+    if (val.startsWith('-') && absVal.length >= String(Math.abs(currentAnswer)).length) {
+      checkAnswer();
+    }
+  } else if (absVal.length >= expectedLen) {
+    checkAnswer();
+  }
+});
+
+$('answer').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') checkAnswer();
+});
+
+$('startBtn').addEventListener('click', startGame);
+$('restartBtn').addEventListener('click', startGame);
+$('reconfigBtn').addEventListener('click', () => show('setup'));
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !$('setup').classList.contains('hidden') && $('game').classList.contains('hidden')) {
+    startGame();
+  }
+});
+</script>
+</body>
+</html>
