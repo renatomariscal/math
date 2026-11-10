@@ -479,8 +479,6 @@ function showProblem() {
   $('problem').classList.remove('pop');
   $('answer').classList.remove('shake');
   $('answer').value = '';
-  $('answer').readOnly = false;
-  $('answer').focus();
   save();
 }
 
@@ -564,6 +562,7 @@ function resumeRound() {
   deadline = Date.now() + round.remaining;
   show('game');
   showProblem();
+  $('answer').focus();
   updateTimer();
   if (round) timerInterval = setInterval(() => updateTimer(true), 250);
 }
@@ -627,9 +626,9 @@ function checkAnswer(automatic) {
   if (!round) return;
 
   const correct = Number(value) === answer;
+  // Clearing the problem blocks resubmission while keeping the field editable for mobile keyboards.
   round.problem = null;
   round.recent = [...round.recent, key].slice(-3);
-  $('answer').readOnly = true;
 
   if (!addition) {
     const weight = progress.facts[key] || 0;
@@ -679,7 +678,10 @@ $('sound').addEventListener('change', save);
 $('answer').addEventListener('input', () => checkAnswer(true));
 $('answer').addEventListener('keydown', event => {
   unlockSound();
-  if (event.key === 'Enter') checkAnswer(false);
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    checkAnswer(false);
+  }
 });
 $('answer').addEventListener('pointerdown', unlockSound);
 $('startBtn').addEventListener('click', startGame);
